@@ -1,0 +1,13 @@
+---
+- name: Configure nginx server
+  hosts: webserver
+  become: yes                 # run tasks as root
+  tasks:
+  - name: Uninstall nginx
+    apt:
+      name: nginx*          # remove all nginx related stuff
+      state: absent
+  - name: Stop nginx
+    service:
+      name: nginx
+      state: stopped

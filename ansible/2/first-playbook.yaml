@@ -1,0 +1,16 @@
+---
+- name: Configure nginx server
+  hosts: webserver
+  become: yes                 # run tasks as root
+  tasks:
+  - name: Update repositories
+    apt:
+      update_cache: true
+  - name: Install nginx
+    apt:
+      name: nginx
+      state: latest
+  - name: Start nginx
+    service:
+      name: nginx
+      state: started
