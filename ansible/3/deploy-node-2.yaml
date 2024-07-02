@@ -1,0 +1,58 @@
+---
+- name: Ensure ACL is installed
+  hosts: 37.152.191.133
+  become: yes
+  tasks:
+    - name: Install ACL
+      apt:
+        name: acl
+        state: present
+
+- name: Install node and npm
+  hosts: 37.152.191.133
+  become: yes
+  tasks:
+    - name: Update apt repo and cache
+      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+    - name: Install nodejs and npm
+      apt:
+        pkg:
+          - nodejs
+          - npm
+
+- name: Create new linux user for node app
+  hosts: 37.152.191.133
+  become: yes
+  tasks:
+    - name: Create linux user
+      user:
+        name: infra
+        comment: infrastructure admin
+        group: admin
+      register: user_creation_result
+    - debug: msg={{user_creation_result}}
+
+- name: Deploy nodejs app
+  hosts: 37.152.191.133
+  become: true
+  become_user: infra
+  tasks:
+    - name: Unpack the nodejs file
+      unarchive:
+        src: ./nodejs-app-1.0.0.tgz
+        dest: /home/infra
+      register: result
+    - debug: msg={{result}}
+    - name: Install dependencies
+      npm:
+        path: /home/infra/package
+    - name: Start the application
+      command:
+        chdir: /home/infra/package/app
+        cmd: node server
+      async: 1000
+      poll: 0
+    - name: Ensure app is running
+      shell: ps aux | grep node
+      register: app_status
+    - debug: msg={{app_status.stdout_lines}}
