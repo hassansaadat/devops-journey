@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-deployment
+  labels:
+    app: django-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django-app
+  template:
+    metadata:
+      name: django-deployment
+      labels:
+        app: django-app
+    spec:
+      containers:
+        - name: app
+          image: localhost:32000/sample-app:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ALLOWED_HOSTS
+              value: "localhost,myapp.com"
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: database-configmap
+                  key: database-host
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: database-configmap
+                  key: database-port
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: database-configmap
+                  key: database-name
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: database-secret
+                  key: database-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-secret
+                  key: database-password
+            - name: CELERY_BROKER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: rabbitmq-configmap
+                  key: rabbitmq-url
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-configmap
+                  key: redis-url
+            - name: REDIS_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-configmap
+                  key: redis-password
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: django-service
+spec:
+  selector:
+    app: django-app
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000

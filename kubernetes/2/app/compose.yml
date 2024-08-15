@@ -1,0 +1,50 @@
+services:
+  app:
+    build: .
+    command: bash -c "python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - database
+      - redis
+      - rabbitmq
+
+  database:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - database:/var/lib/postgresql/data
+
+  redis:
+    image: redis:6.0-alpine
+
+  rabbitmq:
+    image: rabbitmq:3.13.6-management-alpine
+    env_file:
+      - .env
+
+  celery-worker:
+    build: .
+    command: celery -A _base worker -l info
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+
+  celery-beat:
+    build: .
+    command: celery -A _base beat -l info
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+
+volumes:
+  database:
+    driver: local

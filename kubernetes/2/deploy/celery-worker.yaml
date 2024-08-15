@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: celery-worker
+    labels:
+      app: celery-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: celery-worker
+  template:
+    metadata:
+      labels:
+        app: celery-worker
+    spec:
+      containers:
+          - name: celery-worker
+            image: localhost:32000/sample-app:latest
+            command: ["celery", "-A", "_base", "worker", "-l", "Info"]
+            env:
+              - name: DB_HOST
+                valueFrom:
+                  configMapKeyRef:
+                    name: database-configmap
+                    key: database-host
+              - name: DB_PORT
+                valueFrom:
+                  configMapKeyRef:
+                    name: database-configmap
+                    key: database-port
+              - name: DB_NAME
+                valueFrom:
+                  configMapKeyRef:
+                    name: database-configmap
+                    key: database-name
+              - name: DB_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: database-secret
+                    key: database-user
+              - name: DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: database-secret
+                    key: database-password
+              - name: CELERY_BROKER_URL
+                valueFrom:
+                  configMapKeyRef:
+                    name: rabbitmq-configmap
+                    key: rabbitmq-url
